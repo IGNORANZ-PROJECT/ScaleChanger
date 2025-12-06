@@ -1,2 +1,133 @@
 # ScaleChanger
-ScaleChanger is a small Unity Editor tool that lets you change the scale of all selected GameObjects at once. You choose a scale factor, decide whether to include children, and apply everything with one click. It’s handy for quickly adjusting scene layouts and prototype objects.
+
+Unity Editor 拡張ツール **ScaleChanger** の README です。  
+シーン上で選択したオブジェクトを、指定した倍率で一括スケールできます。
+
+---
+
+## 概要
+
+**ScaleChanger** は、Unity Editor 上で選択した GameObject の `Transform.localScale` を指定した倍率で一括変更するためのシンプルなツールです。
+
+- 選択中オブジェクトのスケールを一括で変更
+- 子オブジェクトを含めてまとめてスケールするオプションあり
+- Undo（Ctrl+Z / Cmd+Z）対応
+- シーンのレイアウト調整やプロトタイピング時の調整を高速化
+
+---
+
+## 動作環境
+
+- Unity 2020 以降（Editor 拡張のため、基本的には幅広いバージョンで動作）
+- 3D / 2D いずれのプロジェクトでも利用可能
+
+---
+
+## 導入方法
+
+1. プロジェクト内に以下のフォルダ構成を作成します（例）:
+
+   ```text
+   Assets/
+     IGNORANZ PROJECT/
+       ScaleChanger/
+         Editor/
+           ScaleSelectedObjectsWindow.cs
+   ```
+
+2. `ScaleSelectedObjectsWindow.cs` を **Editor フォルダ内** に配置します。  
+   - `Editor` フォルダであれば場所や名前は自由です。
+   - スクリプトは自動的にコンパイルされ、Unity メニューに追加されます。
+
+3. コンパイル完了後、Unity メニューに **`Tools > ScaleChanger`** が追加されます。
+
+---
+
+## 使い方
+
+1. シーン上でスケールを変更したい GameObject を選択します。
+   - 複数選択も可能です。
+   - ヒエラルキー上で、親オブジェクトのみ選択して使うこともできます。
+
+2. メニューから  
+   **`Tools > ScaleChanger`**  
+   をクリックしてウィンドウを開きます。
+
+3. ウィンドウ内で以下の項目を設定します。
+
+   - **Scale Factor (倍率)**  
+     - スケール倍率を指定します。  
+     - 例: `2` → 2 倍、`0.5` → 半分、`-1` → 反転など
+     - `0` は無効（エラー回避のためボタンが押せないようになっています）。
+
+   - **Include Children (子も含める)**  
+     - ON にすると、選択したオブジェクトの子階層にある Transform もすべてまとめてスケールします。
+     - OFF の場合、選択されたオブジェクト自身のみスケールします。
+
+4. 設定ができたら **`Apply Scale To Selection`** ボタンを押します。
+
+5. 選択中オブジェクト（およびオプションで指定した子階層）の `localScale` が一括で変更されます。
+
+6. 変更をやり直したい場合は、**Ctrl+Z / Cmd+Z** で Undo できます。
+
+---
+
+## 挙動の詳細
+
+- スケール対象
+  - `Selection.transforms` に含まれるすべての Transform を対象にします。
+  - 「子も含める」が有効な場合、選択中オブジェクトの子階層を `GetComponentsInChildren<Transform>(true)` で再帰的に取得し、重複を取り除いた上で処理します。
+
+- Undo 対応
+  - 変更前に `Undo.RecordObjects(...)` を呼び出しているため、通常の操作と同様に Undo で元に戻せます。
+
+- 変更内容
+  - 各 Transform の `localScale` に対し、  
+    `t.localScale = t.localScale * scaleFactor;`  
+    の形で倍率を掛けています。
+
+---
+
+## 注意事項
+
+- **倍率 0 は無効**  
+  - `0` を指定するとオブジェクトが完全に潰れてしまうため、UI 上で警告が表示され、ボタンも無効化されます。
+
+- **Prefab への影響**
+  - シーン上の Prefab インスタンスをスケールすると、Prefab インスタンスにオーバーライドが付きます。
+  - Prefab アセットそのものは変更されませんが、「Apply」を押すと Prefab アセットにも反映されます。
+
+- **非 Uniform Scale に注意**
+  - もともと `x, y, z` が異なるスケールを持つオブジェクトに対しても、そのまま各軸に倍率が掛かります。
+  - 非 Uniform Scale に敏感な物理挙動・シェーダなどを使っている場合は、結果が意図通りか確認してください。
+
+---
+
+## よくある質問
+
+### Q. 子オブジェクトはスケールしたくないのですが？
+
+A. 「Include Children (子も含める)」のチェックを OFF にしてください。  
+   親のみを選択しておけば、親の `localScale` だけ変更されます。
+
+---
+
+### Q. 一部のオブジェクトだけスケールから除外したいです。
+
+A. その場合は、スケールしたくないオブジェクトを選択しないようにヒエラルキー上で調整してください。  
+   必要であれば、今後の拡張として「除外用タグ」「特定の Layer を対象」などのフィルタ機能を追加することもできます。
+
+---
+
+## ライセンス / 利用について
+
+- MIT LICENSE
+
+---
+
+## 更新履歴
+
+- **v1.0.0**
+  - 初版リリース
+  - 選択オブジェクトおよび子オブジェクト（任意）の `localScale` に倍率を掛ける機能を実装
+  - Undo 対応
